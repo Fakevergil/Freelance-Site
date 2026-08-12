@@ -18,33 +18,45 @@ function Projects() {
   const [client, setClient] = useState("");
   const [formError, setFormError] = useState("");
 
-  // Lock body scroll when drawer is open to prevent page bounce/double scroll
+  // Lock body scroll when drawer is open
   useEffect(() => {
     document.title = "Projects | My FreeLance Site";
+
     if (isDrawerOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
+
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isDrawerOpen]);
 
-  // --- FETCH INITIAL DATA ---
+  // FETCH INITIAL DATA
   useEffect(() => {
     api
       .get("/projects/project")
-      .then((res) => setProjects(res.data || []))
-      .catch((err) => console.error("Error fetching projects:", err));
+      .then((res) => {
+        setProjects(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching projects:", err);
+        setProjects([]);
+      });
 
     api
       .get("/client/clients")
-      .then((res) => setProjectClients(res.data || []))
-      .catch((err) => console.error("Error fetching clients:", err));
+      .then((res) => {
+        setProjectClients(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching clients:", err);
+        setProjectClients([]);
+      });
   }, []);
 
-  // --- RESET FORM STATE ---
+  // RESET FORM STATE
   const resetForm = () => {
     setTitle("");
     setDescription("");
@@ -56,13 +68,13 @@ function Projects() {
     setIsDrawerOpen(false);
   };
 
-  // --- START CREATION ---
+  // START CREATION
   const handleOpenCreate = () => {
     resetForm();
     setIsDrawerOpen(true);
   };
 
-  // --- START EDITING ---
+  // START EDITING
   const handleEditStart = (project) => {
     setEditingId(project._id);
     setTitle(project.title || "");
@@ -74,7 +86,7 @@ function Projects() {
     setIsDrawerOpen(true);
   };
 
-  // --- SUBMIT (CREATE OR UPDATE) ---
+  // SUBMIT (CREATE OR UPDATE)
   const handleSubmit = () => {
     if (!title || !status || !client) {
       setFormError("Please fill out Title, Status, and select a Client.");
@@ -94,9 +106,12 @@ function Projects() {
       api
         .put(`/projects/project/${editingId}`, payload)
         .then((res) => {
-          setProjects(
-            projects.map((p) => (p._id === editingId ? res.data : p)),
+          setProjects((prevProjects) =>
+            Array.isArray(prevProjects)
+              ? prevProjects.map((p) => (p._id === editingId ? res.data : p))
+              : [],
           );
+
           resetForm();
         })
         .catch((err) => {
@@ -108,7 +123,12 @@ function Projects() {
       api
         .post("/projects/project", payload)
         .then((res) => {
-          setProjects([...projects, res.data]);
+          setProjects((prevProjects) =>
+            Array.isArray(prevProjects)
+              ? [...prevProjects, res.data]
+              : [res.data],
+          );
+
           resetForm();
         })
         .catch((err) => {
@@ -118,20 +138,27 @@ function Projects() {
     }
   };
 
-  // --- DELETE PROJECT ---
+  // DELETE PROJECT
   const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this project?"))
+    if (!window.confirm("Are you sure you want to delete this project?")) {
       return;
+    }
 
     api
       .delete(`/projects/project/${id}`)
       .then(() => {
-        setProjects(projects.filter((p) => p._id !== id));
+        setProjects((prevProjects) =>
+          Array.isArray(prevProjects)
+            ? prevProjects.filter((p) => p._id !== id)
+            : [],
+        );
       })
-      .catch((err) => console.error("Error deleting project:", err));
+      .catch((err) => {
+        console.error("Error deleting project:", err);
+      });
   };
 
-  // --- HELPER FOR STATUS BADGES ---
+  // HELPER FOR STATUS BADGES
   const renderStatusBadge = (status) => (
     <span
       className={`inline-flex items-center px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] sm:text-xs font-semibold capitalize ${
@@ -151,33 +178,38 @@ function Projects() {
   return (
     <>
       <Navbar />
+
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* ================= HEADER ================= */}
+          {/* HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Projects
               </h1>
+
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Manage, monitor, and assign active client work.
               </p>
             </div>
+
             <button
               onClick={handleOpenCreate}
               className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-3 sm:py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 active:scale-[0.98]"
             >
-              <span className="text-lg leading-none">+</span> Add Project
+              <span className="text-lg leading-none">+</span>
+              Add Project
             </button>
           </div>
 
-          {/* ================= MOBILE VIEW (CARDS) ================= */}
+          {/* MOBILE VIEW */}
           <div className="block md:hidden space-y-3">
-            {projects && projects.length > 0 ? (
+            {Array.isArray(projects) && projects.length > 0 ? (
               projects.map((project) => {
-                const matchedClient = projectClients.find(
-                  (c) => c._id === project.client,
-                );
+                const matchedClient = Array.isArray(projectClients)
+                  ? projectClients.find((c) => c._id === project.client)
+                  : null;
+
                 return (
                   <div
                     key={project._id}
@@ -187,6 +219,7 @@ function Projects() {
                       <span className="font-bold text-slate-900 text-sm truncate max-w-[200px]">
                         {project.title}
                       </span>
+
                       {renderStatusBadge(project.status)}
                     </div>
 
@@ -202,6 +235,7 @@ function Projects() {
                           matchedClient?.name ||
                           "Unassigned"}
                       </span>
+
                       <span className="font-bold text-slate-900 text-sm">
                         ${project.rate || 0}
                       </span>
@@ -214,6 +248,7 @@ function Projects() {
                       >
                         Edit
                       </button>
+
                       <button
                         onClick={() => handleDelete(project._id)}
                         className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition"
@@ -231,7 +266,7 @@ function Projects() {
             )}
           </div>
 
-          {/* ================= DESKTOP VIEW (TABLE) ================= */}
+          {/* DESKTOP VIEW */}
           <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -244,12 +279,14 @@ function Projects() {
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-slate-100 text-sm">
-                {projects && projects.length > 0 ? (
+                {Array.isArray(projects) && projects.length > 0 ? (
                   projects.map((project) => {
-                    const matchedClient = projectClients.find(
-                      (c) => c._id === project.client,
-                    );
+                    const matchedClient = Array.isArray(projectClients)
+                      ? projectClients.find((c) => c._id === project.client)
+                      : null;
+
                     return (
                       <tr
                         key={project._id}
@@ -284,6 +321,7 @@ function Projects() {
                           >
                             Edit
                           </button>
+
                           <button
                             onClick={() => handleDelete(project._id)}
                             className="text-rose-500 hover:text-rose-700 font-medium text-xs transition"
@@ -309,15 +347,16 @@ function Projects() {
           </div>
         </div>
 
-        {/* ================= MODAL DRAWER (CONTAINED SCROLLBARS) ================= */}
+        {/* MODAL DRAWER */}
         {isDrawerOpen && (
           <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm overflow-hidden">
             <div className="w-full sm:max-w-lg bg-white h-dvh max-h-dvh flex flex-col justify-between shadow-2xl overflow-hidden animate-in slide-in-from-right duration-200">
-              {/* Drawer Header (Fixed) */}
+              {/* DRAWER HEADER */}
               <div className="flex-none p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-white z-10">
                 <h2 className="text-base sm:text-lg font-bold text-slate-900">
                   {editingId ? "Edit Project" : "Add New Project"}
                 </h2>
+
                 <button
                   onClick={resetForm}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold transition"
@@ -326,13 +365,14 @@ function Projects() {
                 </button>
               </div>
 
-              {/* Form Body (Scrolls inside this container only) */}
+              {/* FORM BODY */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-                {/* Title */}
+                {/* TITLE */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
                     Project Title
                   </label>
+
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -342,11 +382,12 @@ function Projects() {
                   />
                 </div>
 
-                {/* Description */}
+                {/* DESCRIPTION */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
                     Description
                   </label>
+
                   <textarea
                     rows="3"
                     className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -356,11 +397,12 @@ function Projects() {
                   />
                 </div>
 
-                {/* Rate */}
+                {/* RATE */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
                     Rate ($)
                   </label>
+
                   <input
                     type="number"
                     className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -370,11 +412,12 @@ function Projects() {
                   />
                 </div>
 
-                {/* Status Dropdown */}
+                {/* STATUS */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
                     Status
                   </label>
+
                   <select
                     className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                     value={status}
@@ -386,11 +429,12 @@ function Projects() {
                   </select>
                 </div>
 
-                {/* Client Dropdown */}
+                {/* CLIENT */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">
                     Client
                   </label>
+
                   <select
                     className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                     value={client}
@@ -399,14 +443,17 @@ function Projects() {
                     <option value="" disabled>
                       Select a client...
                     </option>
-                    {projectClients.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.company || c.name}
-                      </option>
-                    ))}
+
+                    {Array.isArray(projectClients) &&
+                      projectClients.map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.company || c.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
+                {/* ERROR */}
                 {formError && (
                   <p className="text-xs font-semibold text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-100">
                     {formError}
@@ -414,7 +461,7 @@ function Projects() {
                 )}
               </div>
 
-              {/* Drawer Actions (Fixed) */}
+              {/* DRAWER ACTIONS */}
               <div className="flex-none p-4 sm:p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-white">
                 <button
                   type="button"
@@ -423,6 +470,7 @@ function Projects() {
                 >
                   Cancel
                 </button>
+
                 <button
                   type="button"
                   onClick={handleSubmit}

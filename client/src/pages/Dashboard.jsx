@@ -62,6 +62,9 @@ function Dashboard() {
       .get("/client/clients")
       .then((res) => setClientsCount((res.data || []).length))
       .catch((err) => console.error("Error fetching clients:", err));
+
+    console.log("invoices:", invoices, Array.isArray(invoices));
+    console.log("projects:", projects, Array.isArray(projects));
   }, []);
 
   // --- DERIVED METRICS (Single-pass computation) ---
@@ -90,7 +93,9 @@ function Dashboard() {
 
   // Active Projects Count
   const activeProjects = useMemo(() => {
-    return projects.filter((p) => p.status === "active");
+    return Array.isArray(projects)
+      ? projects.filter((p) => p.status === "active")
+      : [];
   }, [projects]);
 
   // Chart Data: Sparkline for Total Revenue
@@ -104,13 +109,32 @@ function Dashboard() {
 
   // Chart Data: Project Status Breakdown
   const projectStatusChartData = useMemo(() => {
+    if (!Array.isArray(projects)) {
+      return [
+        {
+          group: "All Projects",
+          active: 0,
+          completed: 0,
+          rejected: 0,
+        },
+      ];
+    }
+
     const counts = projects.reduce(
       (acc, proj) => {
         const st = proj.status ? proj.status.toLowerCase() : "active";
-        if (acc[st] !== undefined) acc[st] += 1;
+
+        if (acc[st] !== undefined) {
+          acc[st] += 1;
+        }
+
         return acc;
       },
-      { active: 0, completed: 0, rejected: 0 },
+      {
+        active: 0,
+        completed: 0,
+        rejected: 0,
+      },
     );
 
     return [
