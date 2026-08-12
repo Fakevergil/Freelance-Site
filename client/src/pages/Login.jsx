@@ -40,7 +40,7 @@ function Login() {
         // Extract token payload depending on API response structure
         const token = typeof res.data === "string" ? res.data : res.data.token;
         localStorage.setItem("token", token);
-        navigate("/");
+        navigate("/dashboard");
       })
       .catch((err) => {
         console.error("Login error:", err);
