@@ -62,9 +62,6 @@ function Dashboard() {
       .get("/client/clients")
       .then((res) => setClientsCount((res.data || []).length))
       .catch((err) => console.error("Error fetching clients:", err));
-
-    console.log("invoices:", invoices, Array.isArray(invoices));
-    console.log("projects:", projects, Array.isArray(projects));
   }, []);
 
   // --- DERIVED METRICS (Single-pass computation) ---
