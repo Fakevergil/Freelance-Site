@@ -659,7 +659,7 @@ function Dashboard() {
                     }
                   >
                     <option value="">-- Optional / Unassigned --</option>
-                    {projects.map((p) => (
+                    {(Array.isArray(projects) ? projects : []).map((p) => (
                       <option key={p._id} value={p._id}>
                         {p.title}
                       </option>

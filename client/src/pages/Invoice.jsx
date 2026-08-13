@@ -211,7 +211,7 @@ function Invoice() {
 
           {/* ================= MOBILE VIEW (CARDS) ================= */}
           <div className="block md:hidden space-y-3">
-            {invoices && invoices.length > 0 ? (
+            {Array.isArray(invoices) && invoices.length > 0 ? (
               invoices.map((invoice) => (
                 <div
                   key={invoice._id}
@@ -226,8 +226,11 @@ function Invoice() {
 
                   <div className="flex items-center justify-between text-xs py-1 border-y border-slate-100">
                     <span className="text-slate-500">
-                      {invoiceProjects.find((p) => p._id === invoice.project)
-                        ?.title || "Unassigned"}
+                      {(Array.isArray(invoiceProjects)
+                        ? invoiceProjects
+                        : []
+                      ).find((p) => p._id === invoice.project)?.title ||
+                        "Unassigned"}
                     </span>
                     <span className="font-bold text-slate-900 text-sm">
                       ${invoice.total || 0}
@@ -368,11 +371,12 @@ function Invoice() {
                     <option value="" disabled>
                       Select a project...
                     </option>
-                    {invoiceProjects.map((p) => (
-                      <option key={p._id} value={p._id}>
-                        {p.title}
-                      </option>
-                    ))}
+                    {Array.isArray(invoiceProjects) &&
+                      invoiceProjects.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.title}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
